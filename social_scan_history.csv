@@ -1,0 +1,4 @@
+scan_time_utc,ticker,mention_count,current_window_mentions,baseline_window_mentions,mention_velocity,sentiment_score,engagement_score,source_diversity_score,influencer_score,spam_penalty,narrative_score,social_pressure_score,confidence_label,narrative_tags,top_sources,reason
+2026-03-12T19:41:20Z,AAPL,0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,No Signal,,,no mentions detected
+2026-03-12T19:41:20Z,NVDA,0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,No Signal,,,no mentions detected
+2026-03-12T19:41:20Z,TSLA,0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,No Signal,,,no mentions detected

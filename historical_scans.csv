@@ -1,0 +1,34 @@
+scan_date,ticker,price,market_cap,float_shares,rel_volume,dollar_volume,vol_expansion_score,compression_score,breakout_score,trend_score,news_score,short_interest_score,premarket_gap_score,social_score,insider_score,total_score,reason,repeat_count_30d
+2026-03-12,FTK,18.16,545850048,13956987.0,2.15,10004652.64,3.0,0.0,3.0,2.0,2.0,2.0,0.0,0.0,0.0,16.98,"unusual volume, multi-day volume expansion, near breakout, trend improving, elevated news flow, short squeeze potential",1
+2026-03-12,CHAC,10.3,308671360,18519324.0,4.69,20801045.13,3.0,3.0,1.0,0.0,1.0,0.0,0.0,0.0,0.0,16.23,"unusual volume, multi-day volume expansion, tight consolidation, elevated news flow",1
+2026-03-12,BMBL,3.82,606389248,68367169.0,7.85,104994134.94,3.0,0.0,0.0,2.0,2.0,1.5,2.0,0.0,0.0,15.5,"unusual volume, multi-day volume expansion, trend improving, elevated news flow, short squeeze potential, gap strength",1
+2026-03-12,EH,12.57,904849600,106409110.0,2.53,14066282.18,3.0,0.0,2.0,1.0,2.0,1.5,1.0,0.0,0.0,13.54,"unusual volume, multi-day volume expansion, near breakout, elevated news flow, short squeeze potential, gap strength",1
+2026-03-12,AGRO,10.39,1469829120,19962240.0,2.94,24979670.0,1.31,0.0,2.0,3.0,2.0,0.0,0.0,0.0,0.0,13.49,"unusual volume, near breakout, trend improving, elevated news flow",1
+2026-03-12,ALH,19.54,3963238400,45311242.0,3.97,37010403.09,3.0,0.0,0.0,1.0,1.0,1.5,0.0,0.0,0.0,12.46,"unusual volume, multi-day volume expansion, elevated news flow, short squeeze potential",1
+2026-03-12,BLDP,2.51,755034496,300483028.0,3.14,21579619.55,3.0,0.0,0.0,2.0,2.0,1.0,0.0,0.0,0.0,11.57,"unusual volume, multi-day volume expansion, trend improving, elevated news flow, short squeeze potential",1
+2026-03-12,ENGN,7.52,503760768,26439402.0,3.36,10842531.49,2.8,0.0,0.0,0.0,2.0,1.0,0.0,0.0,0.0,11.0,"unusual volume, multi-day volume expansion, elevated news flow, short squeeze potential",1
+2026-03-12,ACDC,7.29,1318550912,32797372.0,1.62,15422658.31,2.19,0.0,0.0,3.0,2.0,1.0,0.0,0.0,0.0,10.57,"multi-day volume expansion, trend improving, elevated news flow, short squeeze potential",1
+2026-03-12,ASTL,3.79,397699104,73585822.0,1.9,10377296.57,2.3,0.0,0.0,1.0,2.0,0.0,0.0,0.0,0.0,7.43,"multi-day volume expansion, elevated news flow",1
+2026-03-12,CION,7.02,365644160,,1.63,6297931.23,3.0,0.0,0.0,0.0,2.0,0.0,0.0,0.0,0.0,7.15,"multi-day volume expansion, elevated news flow",1
+2026-03-12,AERO,14.16,2066721792,198606000.0,1.73,12877939.74,0.0,0.0,0.0,0.0,2.0,0.0,0.0,0.0,0.0,3.68,elevated news flow,1
+2026-03-12,CHAC,10.29,308425600,18519324.0,4.73,20954761.72,3.0,3.0,1.0,0.0,3.0,0.0,0.0,0.0,0.0,18.27,"unusual volume, multi-day volume expansion, tight consolidation, elevated news flow",2
+2026-03-12,FTK,18.31,550358720,13956987.0,2.56,11995320.09,3.0,0.0,3.0,2.0,1.0,2.0,0.0,0.0,0.0,17.07,"unusual volume, multi-day volume expansion, near breakout, trend improving, elevated news flow, short squeeze potential",2
+2026-03-12,ALH,19.82,4019015680,45311242.0,4.5,42506247.47,3.0,0.0,0.0,1.0,3.0,1.5,0.0,0.0,0.0,15.1,"unusual volume, multi-day volume expansion, elevated news flow, short squeeze potential",2
+2026-03-12,AGRO,10.44,1477142912,19962240.0,3.02,25838091.02,1.42,0.0,2.0,3.0,3.0,0.0,0.0,0.0,0.0,14.93,"unusual volume, near breakout, trend improving, elevated news flow",2
+2026-03-12,BMBL,3.89,618087872,68367169.0,8.27,112756057.54,3.0,0.0,0.0,2.0,0.0,1.5,2.0,0.0,0.0,14.3,"unusual volume, multi-day volume expansion, trend improving, short squeeze potential, gap strength",2
+2026-03-12,EH,12.36,889732800,106409110.0,2.78,15202601.82,3.0,0.0,1.0,1.0,3.0,1.5,1.0,0.0,0.0,13.84,"unusual volume, multi-day volume expansion, elevated news flow, short squeeze potential, gap strength",2
+2026-03-12,ACDC,7.38,1335335808,32797372.0,1.88,18145032.65,2.88,0.0,0.0,3.0,2.5,1.0,0.0,0.0,0.0,12.51,"multi-day volume expansion, trend improving, elevated news flow, short squeeze potential",2
+2026-03-12,BLDP,2.46,741320768,300483028.0,3.27,22049865.47,3.0,0.0,0.0,2.0,0.5,1.0,0.0,0.0,0.0,10.93,"unusual volume, multi-day volume expansion, trend improving, short squeeze potential",2
+2026-03-12,ENGN,7.6,509119936,26439402.0,3.45,11249177.86,2.9,0.0,0.0,0.0,0.5,1.0,0.0,0.0,0.0,10.42,"unusual volume, multi-day volume expansion, short squeeze potential",2
+2026-03-12,GOGO,4.57,614822912,98014751.0,1.68,15372080.76,1.4,0.0,0.0,0.0,3.0,3.0,0.0,0.0,0.0,9.1,"elevated news flow, short squeeze potential",1
+2026-03-12,ASTL,3.8,398748448,73585822.0,2.15,11786961.45,3.0,0.0,0.0,1.0,0.5,0.0,0.0,0.0,0.0,7.78,"unusual volume, multi-day volume expansion",2
+2026-03-12,ACP,5.26,660603136,,1.58,4318500.31,1.04,2.0,0.0,0.0,3.0,0.0,0.0,0.0,0.0,7.55,"tight consolidation, elevated news flow",1
+2026-03-12,GPGI,18.02,5216712704,98979456.0,2.17,132031193.53,2.49,0.0,0.0,0.0,1.0,1.0,0.0,0.0,0.0,7.4,"unusual volume, multi-day volume expansion, elevated news flow, short squeeze potential",1
+2026-03-12,CION,6.95,361742848,,1.93,7398133.65,3.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,7.12,"multi-day volume expansion, elevated news flow",2
+2026-03-12,BTZ,10.1,942577024,,1.58,5093339.29,1.76,2.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,6.01,"multi-day volume expansion, tight consolidation",1
+2026-03-12,GEVO,2.47,599714240,226066674.0,1.62,13913640.14,0.0,0.0,0.0,2.0,0.5,1.5,0.0,0.0,0.0,5.45,"trend improving, short squeeze potential",1
+2026-03-12,AERO,13.94,2033164032,198606000.0,2.12,15500876.42,0.0,0.0,0.0,0.0,3.0,0.0,0.0,0.0,0.0,5.34,"unusual volume, elevated news flow",2
+2026-03-12,ADPT,12.22,1881654784,116831970.0,2.0,42013472.94,1.7,0.0,0.0,0.0,0.5,0.0,0.0,0.0,0.0,4.84,"unusual volume, multi-day volume expansion",1
+2026-03-13,AVO,12.12,858657984,39624200.0,2.29,14818832.98,2.92,0.0,0.0,1.0,1.5,1.0,0.0,0.0,0.0,10.25,"unusual volume, multi-day volume expansion, elevated news flow, short squeeze potential",1
+2026-03-13,HIMX,10.14,1773604480,247496277.0,2.87,91038944.35,3.0,0.0,0.0,2.0,1.0,0.0,0.0,0.0,0.0,9.44,"unusual volume, multi-day volume expansion, trend improving, elevated news flow",1
+2026-03-13,HNRG,16.12,757953600,33485390.0,2.48,18775432.46,3.0,0.0,0.0,0.0,0.5,1.0,0.0,0.0,0.0,8.98,"unusual volume, multi-day volume expansion, short squeeze potential",1

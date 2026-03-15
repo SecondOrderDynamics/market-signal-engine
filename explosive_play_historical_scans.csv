@@ -1,0 +1,28 @@
+scan_date,ticker,price,market_cap,float_shares,rel_volume,dollar_volume,vol_expansion_score,compression_score,breakout_score,trend_score,news_score,short_interest_score,premarket_gap_score,social_score,insider_score,total_score,reason,repeat_count_30d
+2026-03-15,AVO,12.15,860783360,40103025.0,5.09,33012666.76,3.0,0.0,0.0,1.0,3.0,1.0,0.0,0.0,0.0,14.8,"unusual volume, multi-day volume expansion, elevated news flow, short squeeze potential",1
+2026-03-15,ABX,9.8,957977984,43884579.0,1.8,11379662.22,3.0,0.0,0.0,3.0,3.0,3.0,0.0,0.0,0.0,14.56,"multi-day volume expansion, trend improving, elevated news flow, short squeeze potential",1
+2026-03-15,FTK,17.68,531422336,14029568.0,1.89,9768642.17,3.0,0.0,1.0,2.0,1.0,2.0,0.0,0.0,0.0,13.47,"multi-day volume expansion, trend improving, elevated news flow, short squeeze potential",1
+2026-03-15,BGC,9.57,4538687488,361918846.0,2.09,47748948.85,3.0,1.0,1.0,3.0,3.0,0.0,0.0,0.0,0.0,13.11,"unusual volume, multi-day volume expansion, trend improving, elevated news flow",1
+2026-03-15,ALH,19.75,4005831936,45442270.0,2.8,35095513.0,3.0,0.0,0.0,1.0,3.0,1.5,0.0,0.0,0.0,12.66,"unusual volume, multi-day volume expansion, elevated news flow, short squeeze potential",1
+2026-03-15,ACDC,6.35,1148531968,32661624.0,1.93,17475834.74,3.0,0.0,0.0,3.0,2.5,1.0,0.0,0.0,0.0,12.31,"multi-day volume expansion, trend improving, elevated news flow, short squeeze potential",1
+2026-03-15,BW,10.51,1370998016,93418315.0,2.49,112195955.06,3.0,0.0,0.0,2.0,3.0,0.0,0.0,0.0,0.0,10.59,"unusual volume, multi-day volume expansion, trend improving, elevated news flow",1
+2026-03-15,EH,11.85,853020544,106927501.0,2.23,13404507.13,3.0,0.0,0.0,0.0,3.0,1.5,0.0,0.0,0.0,10.18,"unusual volume, multi-day volume expansion, elevated news flow, short squeeze potential",1
+2026-03-15,BMBL,3.77,599236544,68367169.0,2.0,37845623.6,3.0,0.0,0.0,2.0,1.0,1.5,0.0,0.0,0.0,9.9,"multi-day volume expansion, trend improving, elevated news flow, short squeeze potential",1
+2026-03-15,GAU,2.56,665063488,244836899.0,2.5,25473113.03,3.0,0.0,0.0,1.0,3.0,0.0,0.0,0.0,0.0,9.81,"unusual volume, multi-day volume expansion, elevated news flow",1
+2026-03-15,AERO,13.43,1959482752,198606000.0,2.92,24254285.09,3.0,0.0,0.0,0.0,3.0,0.0,0.0,0.0,0.0,9.51,"unusual volume, multi-day volume expansion, elevated news flow",1
+2026-03-15,FWRD,15.8,493722112,22694444.0,1.67,22124171.47,3.0,0.0,0.0,0.0,1.0,2.0,0.0,0.0,0.0,9.4,"multi-day volume expansion, elevated news flow, short squeeze potential",1
+2026-03-15,ALOY,11.98,684477312,53935198.0,2.46,32151739.1,2.2,0.0,0.0,1.0,3.0,0.0,0.0,0.0,0.0,8.8,"unusual volume, multi-day volume expansion, elevated news flow",1
+2026-03-15,AUR,4.08,7951157760,1247259963.0,1.84,139497857.55,1.88,0.0,0.0,1.0,3.0,1.0,0.0,0.0,0.0,8.67,"multi-day volume expansion, elevated news flow, short squeeze potential",1
+2026-03-15,GDOT,10.53,584926912,46908976.0,2.84,14892557.56,3.0,0.0,0.0,0.0,0.5,0.0,0.0,0.0,0.0,8.41,"unusual volume, multi-day volume expansion",1
+2026-03-15,CIG,2.2,6963773952,2373107263.0,1.79,22990152.3,1.05,1.0,0.0,2.0,3.0,0.0,0.0,0.0,0.0,8.4,"trend improving, elevated news flow",1
+2026-03-15,AXIA,10.94,24602419200,1527753972.0,1.63,42400987.81,2.05,1.0,0.0,2.0,1.5,0.0,0.0,0.0,0.0,8.21,"multi-day volume expansion, trend improving, elevated news flow",1
+2026-03-15,CION,6.55,341168576,,2.94,11726321.24,3.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,7.93,"unusual volume, multi-day volume expansion, elevated news flow",1
+2026-03-15,CERS,1.69,324770304,171815020.0,2.37,8043210.51,3.0,0.0,0.0,0.0,0.5,1.0,0.0,0.0,0.0,7.84,"unusual volume, multi-day volume expansion, short squeeze potential",1
+2026-03-15,ANGX,3.7,623942400,87255564.0,2.26,6049407.58,3.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,7.32,"unusual volume, multi-day volume expansion, short squeeze potential",1
+2026-03-15,EGY,5.39,561952000,101526440.0,1.6,12182402.24,0.44,0.0,0.0,3.0,3.0,0.0,0.0,0.0,0.0,7.24,"trend improving, elevated news flow",1
+2026-03-15,ASTL,3.46,363070944,71139871.0,1.75,9555963.05,3.0,0.0,0.0,1.0,0.5,0.0,0.0,0.0,0.0,6.9,multi-day volume expansion,1
+2026-03-15,ABTC,1.04,964709184,191049525.0,1.53,25106057.72,2.09,0.0,0.0,0.0,3.0,0.0,0.0,0.0,0.0,6.74,"multi-day volume expansion, elevated news flow",1
+2026-03-15,ADPT,13.17,2027937280,116831970.0,2.03,51259023.15,2.81,0.0,0.0,0.0,0.5,0.0,0.0,0.0,0.0,6.21,"unusual volume, multi-day volume expansion",1
+2026-03-15,ENGN,7.16,479644544,26439402.0,1.59,5665464.44,0.0,0.0,0.0,0.0,0.5,1.0,0.0,0.0,0.0,4.31,short squeeze potential,1
+2026-03-15,BSBR,5.72,43529801728,3735623127.0,2.28,12848486.61,1.31,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,4.3,unusual volume,1
+2026-03-15,BLND,1.56,405205152,219316192.0,1.79,9786470.88,0.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2.98,mixed setup,1
