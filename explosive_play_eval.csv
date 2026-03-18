@@ -1,0 +1,1 @@
+scan_date,ticker,total_score,composite_score,event_intel_score,sec_insider_score,anomaly_score,fwd1d_close,fwd1d_max,fwd3d_close,fwd3d_max,fwd5d_close,fwd5d_max,hit_5pct_5d,hit_10pct_5d,hit_15pct_5d,base_rank,merged_rank

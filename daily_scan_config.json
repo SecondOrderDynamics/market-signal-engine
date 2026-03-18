@@ -1,0 +1,28 @@
+{
+  "paths": {
+    "explosive_output": "explosive_play_candidates.csv",
+    "explosive_history": "explosive_play_historical_scans.csv",
+    "event_output": "event_intel_scan.csv",
+    "event_history": "event_intel_history.csv",
+    "merged_output": "merged_watchlist.csv",
+    "merged_history": "merged_watchlist_history.csv",
+    "eval_output": "explosive_play_eval.csv",
+    "log_dir": "logs",
+    "summary_dir": "logs"
+  },
+  "evaluation": {
+    "top_n": "5,10,20",
+    "composite_weights": "0.65,0.25,0.10",
+    "auto_evaluate": true
+  },
+  "storage": {
+    "enable_sqlite": false,
+    "sqlite_path": "scan_history.db",
+    "tables": {
+      "explosive": "explosive_history",
+      "event_intel": "event_intel_history",
+      "merged": "merged_watchlist_history",
+      "evaluation": "evaluation_results"
+    }
+  }
+}

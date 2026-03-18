@@ -1,0 +1,27 @@
+{
+  "timestamp_utc": "2026-03-17T03:13:15Z",
+  "run_id": "20260316_231315",
+  "status": "failed",
+  "success": false,
+  "error_message": "FileNotFoundError: [WinError 2] The system cannot find the file specified",
+  "top_candidates": [],
+  "candidate_counts": {
+    "explosive_found": 0,
+    "merged_total": 0
+  },
+  "evaluation_counts": {
+    "historical_total": 0,
+    "eligible": 0,
+    "skipped_insufficient_forward": 0
+  },
+  "output_files": {
+    "explosive_output": "explosive_play_candidates.csv",
+    "event_output": "event_intel_scan.csv",
+    "merged_output": "merged_watchlist.csv",
+    "evaluation_output": "explosive_play_eval.csv",
+    "summary_output": "logs\\daily_summary_20260316_231315.json"
+  },
+  "log_file": "logs\\daily_scan_20260316_231315.log",
+  "merge_status": "",
+  "last_completed_stage": "startup"
+}

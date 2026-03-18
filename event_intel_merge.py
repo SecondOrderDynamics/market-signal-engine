@@ -114,6 +114,12 @@ def merge_event_intel(
         )
         return base, summary
 
+    # If base rows already have event-intel columns from a prior merge,
+    # drop only overlapping event columns so latest event_df values remain canonical.
+    overlap_cols = [c for c in event_df.columns if c != "ticker" and c in base.columns]
+    if overlap_cols:
+        base = base.drop(columns=overlap_cols)
+
     merged = base.merge(event_df, on="ticker", how="left")
 
     for col in [

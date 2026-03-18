@@ -1,0 +1,4 @@
+[2026-03-16 23:13:15] Starting daily scan workflow
+[2026-03-16 23:13:15] explosive_scanner started | start_utc=2026-03-17T03:13:15Z
+[2026-03-16 23:13:15] RUN: does_not_exist_python.exe explosive_play_scanner.py --output explosive_play_candidates.csv --history explosive_play_historical_scans.csv
+[2026-03-16 23:13:15] Hard failure: FileNotFoundError: [WinError 2] The system cannot find the file specified

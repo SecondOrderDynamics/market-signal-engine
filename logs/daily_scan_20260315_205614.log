@@ -1,0 +1,2 @@
+[2026-03-15 20:56:14] Starting daily scan workflow
+[2026-03-15 20:56:14] RUN: C:\Users\jkers\AppData\Local\Programs\Python\Python313\python.exe explosive_play_scanner.py --output explosive_play_candidates.csv --history explosive_play_historical_scans.csv

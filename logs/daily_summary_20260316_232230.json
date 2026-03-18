@@ -1,0 +1,98 @@
+{
+  "timestamp_utc": "2026-03-17T03:22:30Z",
+  "run_id": "20260316_232230",
+  "status": "success",
+  "success": true,
+  "error_message": "",
+  "top_candidates": [
+    {
+      "ticker": "DSGN",
+      "total_score": 18.0,
+      "event_intel_score": 0.0,
+      "anomaly_score": 0.0,
+      "anomaly_label": "Baseline Building"
+    },
+    {
+      "ticker": "ABX",
+      "total_score": 15.91,
+      "event_intel_score": 3.9,
+      "anomaly_score": 3.19,
+      "anomaly_label": "Elevated vs Baseline"
+    },
+    {
+      "ticker": "CTMX",
+      "total_score": 15.0,
+      "event_intel_score": 2.08,
+      "anomaly_score": 0.0,
+      "anomaly_label": "Baseline Building"
+    },
+    {
+      "ticker": "BCRX",
+      "total_score": 14.39,
+      "event_intel_score": 2.9,
+      "anomaly_score": 0.0,
+      "anomaly_label": "Baseline Building"
+    },
+    {
+      "ticker": "GPRK",
+      "total_score": 14.28,
+      "event_intel_score": 0.0,
+      "anomaly_score": 0.0,
+      "anomaly_label": "Baseline Building"
+    },
+    {
+      "ticker": "ERIC",
+      "total_score": 13.88,
+      "event_intel_score": 0.0,
+      "anomaly_score": 0.0,
+      "anomaly_label": "Baseline Building"
+    },
+    {
+      "ticker": "AGRO",
+      "total_score": 12.88,
+      "event_intel_score": 0.0,
+      "anomaly_score": 0.0,
+      "anomaly_label": "Baseline Building"
+    },
+    {
+      "ticker": "BW",
+      "total_score": 12.52,
+      "event_intel_score": 2.99,
+      "anomaly_score": 0.0,
+      "anomaly_label": "Within Baseline"
+    },
+    {
+      "ticker": "CGAU",
+      "total_score": 10.27,
+      "event_intel_score": 0.0,
+      "anomaly_score": 0.0,
+      "anomaly_label": "Baseline Building"
+    },
+    {
+      "ticker": "BRCB",
+      "total_score": 10.24,
+      "event_intel_score": 1.5,
+      "anomaly_score": 0.0,
+      "anomaly_label": "Baseline Building"
+    }
+  ],
+  "candidate_counts": {
+    "explosive_found": 28,
+    "merged_total": 28
+  },
+  "evaluation_counts": {
+    "historical_total": 205,
+    "eligible": 0,
+    "skipped_insufficient_forward": 205
+  },
+  "output_files": {
+    "explosive_output": "explosive_play_candidates.csv",
+    "event_output": "event_intel_scan.csv",
+    "merged_output": "merged_watchlist.csv",
+    "evaluation_output": "explosive_play_eval.csv",
+    "summary_output": "logs\\daily_summary_20260316_232230.json"
+  },
+  "log_file": "logs\\daily_scan_20260316_232230.log",
+  "merge_status": "merged event-intel data",
+  "last_completed_stage": "summary"
+}

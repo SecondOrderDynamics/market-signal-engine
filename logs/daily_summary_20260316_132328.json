@@ -1,0 +1,97 @@
+{
+  "timestamp_utc": "2026-03-16T17:23:28Z",
+  "run_id": "20260316_132328",
+  "status": "success",
+  "success": true,
+  "error_message": "",
+  "top_candidates": [
+    {
+      "ticker": "BCRX",
+      "total_score": 15.61,
+      "event_intel_score": "",
+      "anomaly_score": "",
+      "anomaly_label": ""
+    },
+    {
+      "ticker": "DSGN",
+      "total_score": 14.52,
+      "event_intel_score": "",
+      "anomaly_score": "",
+      "anomaly_label": ""
+    },
+    {
+      "ticker": "CTMX",
+      "total_score": 14.2,
+      "event_intel_score": "",
+      "anomaly_score": "",
+      "anomaly_label": ""
+    },
+    {
+      "ticker": "MVST",
+      "total_score": 13.48,
+      "event_intel_score": "",
+      "anomaly_score": "",
+      "anomaly_label": ""
+    },
+    {
+      "ticker": "GSIT",
+      "total_score": 11.38,
+      "event_intel_score": "",
+      "anomaly_score": "",
+      "anomaly_label": ""
+    },
+    {
+      "ticker": "LAES",
+      "total_score": 11.06,
+      "event_intel_score": "",
+      "anomaly_score": "",
+      "anomaly_label": ""
+    },
+    {
+      "ticker": "NBP",
+      "total_score": 10.45,
+      "event_intel_score": "",
+      "anomaly_score": "",
+      "anomaly_label": ""
+    },
+    {
+      "ticker": "NEXN",
+      "total_score": 10.29,
+      "event_intel_score": "",
+      "anomaly_score": "",
+      "anomaly_label": ""
+    },
+    {
+      "ticker": "BRCB",
+      "total_score": 9.95,
+      "event_intel_score": "",
+      "anomaly_score": "",
+      "anomaly_label": ""
+    },
+    {
+      "ticker": "JFR",
+      "total_score": 9.68,
+      "event_intel_score": "",
+      "anomaly_score": "",
+      "anomaly_label": ""
+    }
+  ],
+  "candidate_counts": {
+    "explosive_found": 14,
+    "merged_total": 14
+  },
+  "evaluation_counts": {
+    "historical_total": 149,
+    "eligible": 0,
+    "skipped_insufficient_forward": 149
+  },
+  "output_files": {
+    "explosive_output": "explosive_play_candidates.csv",
+    "event_output": "event_intel_scan.csv",
+    "merged_output": "merged_watchlist.csv",
+    "evaluation_output": "explosive_play_eval.csv",
+    "summary_output": "logs\\daily_summary_20260316_132328.json"
+  },
+  "log_file": "logs\\daily_scan_20260316_132328.log",
+  "merge_status": "merged event-intel data"
+}

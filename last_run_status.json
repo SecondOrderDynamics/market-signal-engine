@@ -1,0 +1,22 @@
+{
+  "start_time_utc": "2026-03-18T14:03:35Z",
+  "end_time_utc": "2026-03-18T14:06:20Z",
+  "duration_seconds": 165.606,
+  "status": "success",
+  "success": true,
+  "last_completed_stage": "summary",
+  "output_file_names": [
+    "daily_summary_20260318_100335.json",
+    "event_intel_scan.csv",
+    "explosive_play_candidates.csv",
+    "explosive_play_eval.csv",
+    "merged_watchlist.csv"
+  ],
+  "output_files": {
+    "explosive_output": "explosive_play_candidates.csv",
+    "event_output": "event_intel_scan.csv",
+    "merged_output": "merged_watchlist.csv",
+    "evaluation_output": "explosive_play_eval.csv",
+    "summary_output": "logs\\daily_summary_20260318_100335.json"
+  }
+}

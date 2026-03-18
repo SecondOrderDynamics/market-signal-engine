@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import time
 from dataclasses import dataclass, asdict
 from datetime import datetime
@@ -76,6 +77,12 @@ DAILY_OUTPUT_FILE = "explosive_play_candidates.csv"
 DEFAULT_EVENT_INTEL = "event_intel_scan.csv"
 NEWSAPI_KEY = os.getenv("NEWSAPI_KEY", "")
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ExplosivePlayScanner/2.0"
+REDDIT_SEARCH_URL = "https://www.reddit.com/search.json"
+FEAR_GREED_ENDPOINTS = [
+    "https://production.dataviz.cnn.io/index/fearandgreed/graphdata",
+    "https://production.dataviz.cnn.io/index/fearandgreed/now",
+]
+_FEAR_GREED_CACHE: Optional[float] = None
 
 
 @dataclass
@@ -103,10 +110,16 @@ class ScanResult:
 # ----------------------------
 # Utility helpers
 # ----------------------------
-def safe_request(url: str, params: Optional[dict] = None) -> Optional[requests.Response]:
+def safe_request(
+    url: str,
+    params: Optional[dict] = None,
+    headers: Optional[Dict[str, str]] = None,
+) -> Optional[requests.Response]:
     try:
-        headers = {"User-Agent": USER_AGENT}
-        resp = requests.get(url, params=params, headers=headers, timeout=REQUEST_TIMEOUT)
+        request_headers = {"User-Agent": USER_AGENT}
+        if headers:
+            request_headers.update(headers)
+        resp = requests.get(url, params=params, headers=request_headers, timeout=REQUEST_TIMEOUT)
         resp.raise_for_status()
         return resp
     except Exception:
@@ -387,21 +400,169 @@ def premarket_gap_score(df: pd.DataFrame) -> float:
 
 
 
-def social_score(ticker: str) -> float:
-    """Best-effort social proxy using Stocktwits symbol page HTML."""
-    url = f"https://stocktwits.com/symbol/{ticker}"
-    resp = safe_request(url)
+def _extract_fear_greed_value(payload: object) -> Optional[float]:
+    stack = [payload]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, dict):
+            for key, value in node.items():
+                key_l = str(key).lower()
+                if key_l in {"score", "value", "fear_and_greed"} and isinstance(value, (int, float)):
+                    v = float(value)
+                    if 0.0 <= v <= 100.0:
+                        return v
+                if isinstance(value, (dict, list)):
+                    stack.append(value)
+        elif isinstance(node, list):
+            stack.extend(node)
+    return None
+
+
+def get_fear_greed_index() -> Optional[float]:
+    global _FEAR_GREED_CACHE
+    if _FEAR_GREED_CACHE is not None:
+        return _FEAR_GREED_CACHE
+
+    for endpoint in FEAR_GREED_ENDPOINTS:
+        resp = safe_request(endpoint)
+        if resp is None:
+            continue
+        try:
+            payload = resp.json()
+        except Exception:
+            continue
+
+        value = _extract_fear_greed_value(payload)
+        if value is not None:
+            _FEAR_GREED_CACHE = value
+            return value
+
+    return None
+
+
+def fear_greed_risk_on_score(value: Optional[float]) -> float:
+    if value is None:
+        return 0.0
+    if value >= 75:
+        return 1.0
+    if value >= 60:
+        return 0.8
+    if value >= 50:
+        return 0.6
+    if value >= 40:
+        return 0.4
+    if value >= 25:
+        return 0.2
+    return 0.0
+
+
+def reddit_buzz_score(ticker: str) -> float:
+    ticker_up = ticker.upper()
+    resp = safe_request(
+        REDDIT_SEARCH_URL,
+        params={
+            "q": f"(${ticker_up} OR {ticker_up}) (stock OR stocks OR earnings OR market)",
+            "sort": "new",
+            "limit": 40,
+            "type": "link",
+            "raw_json": 1,
+        },
+        headers={
+            "Accept": "application/json",
+            "Referer": "https://www.reddit.com/",
+        },
+    )
     if resp is None:
         return 0.0
 
-    text = resp.text.lower()
-    hints = ["watchers", "messages", "trending"]
-    hits = sum(1 for h in hints if h in text)
-    if hits >= 3:
+    try:
+        payload = resp.json()
+    except Exception:
+        return 0.0
+
+    children = payload.get("data", {}).get("children", []) or []
+    if not children:
+        return 0.0
+
+    ticker_pattern = re.compile(rf"(?<![A-Z0-9])\$?{re.escape(ticker_up)}(?![A-Z0-9])", re.IGNORECASE)
+    mentions = 0
+    total_engagement = 0.0
+    for child in children:
+        data = child.get("data") or {}
+        title = str(data.get("title", "") or "")
+        selftext = str(data.get("selftext", "") or "")
+        body = f"{title} {selftext}".strip()
+        if not body or not ticker_pattern.search(body):
+            continue
+        mentions += 1
+        ups = float(data.get("ups", 0) or 0)
+        comments = float(data.get("num_comments", 0) or 0)
+        total_engagement += ups + 1.5 * comments
+
+    if mentions == 0:
+        return 0.0
+
+    mention_component = min(1.0, mentions / 12.0)
+    engagement_component = min(1.0, float(np.log1p(total_engagement)) / 6.0)
+    return round(mention_component * 0.65 + engagement_component * 0.35, 3)
+
+
+def news_buzz_score(news_items: List[dict], ticker: str) -> float:
+    if not news_items:
+        return 0.0
+
+    ticker_up = ticker.upper()
+    ticker_pattern = re.compile(rf"(?<![A-Z0-9])\$?{re.escape(ticker_up)}(?![A-Z0-9])", re.IGNORECASE)
+    catalyst_terms = [
+        "earnings",
+        "guidance",
+        "upgrade",
+        "approval",
+        "contract",
+        "partnership",
+        "acquisition",
+        "merger",
+        "fda",
+        "phase 1",
+        "phase 2",
+        "phase 3",
+    ]
+
+    mentions = 0
+    catalyst_hits = 0
+    for item in news_items[:20]:
+        blob = " ".join(str(item.get(k, "")) for k in ["title", "description", "summary"])
+        if not blob.strip() or not ticker_pattern.search(blob):
+            continue
+        mentions += 1
+        blob_l = blob.lower()
+        if any(term in blob_l for term in catalyst_terms):
+            catalyst_hits += 1
+
+    if mentions == 0:
+        return 0.0
+
+    coverage_component = min(1.0, mentions / 10.0)
+    catalyst_component = min(1.0, catalyst_hits / max(mentions, 1))
+    return round(coverage_component * 0.6 + catalyst_component * 0.4, 3)
+
+
+def social_score(ticker: str, news_items: Optional[List[dict]] = None) -> float:
+    """
+    Best-effort sentiment proxy using Reddit + news + market regime.
+    Kept on the historical 0.0/0.5/1.0/1.5 scale for score stability.
+    """
+    news_items = news_items if news_items is not None else get_recent_news_items(ticker)
+    reddit = reddit_buzz_score(ticker)
+    news = news_buzz_score(news_items, ticker)
+    regime = fear_greed_risk_on_score(get_fear_greed_index())
+
+    blended = reddit * 0.55 + news * 0.30 + regime * 0.15
+    if blended >= 0.75:
         return 1.5
-    if hits >= 2:
+    if blended >= 0.50:
         return 1.0
-    if hits >= 1:
+    if blended >= 0.25:
         return 0.5
     return 0.0
 
@@ -491,7 +652,7 @@ def scan_ticker(ticker: str) -> Optional[ScanResult]:
     nscore = news_score_from_items(news_items)
     sscore = short_interest_score(info)
     pgscore = premarket_gap_score(hist)
-    socscore = social_score(ticker)
+    socscore = social_score(ticker, news_items=news_items)
     iscore = insider_activity_score(ticker)
 
     float_bonus = 0.0
@@ -554,6 +715,11 @@ def scan_ticker(ticker: str) -> Optional[ScanResult]:
 # Historical persistence
 # ----------------------------
 def append_to_history(df: pd.DataFrame, history_file: str = HISTORY_FILE) -> None:
+    # Ensure every persisted row has a scan_date for evaluator alignment.
+    if "scan_date" not in df.columns:
+        df = df.copy()
+        df["scan_date"] = datetime.now().strftime("%Y-%m-%d")
+
     path = os.path.abspath(history_file)
     if os.path.exists(path):
         try:

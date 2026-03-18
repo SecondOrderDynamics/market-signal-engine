@@ -23,6 +23,7 @@ USER_AGENT = os.getenv(
 REQUEST_TIMEOUT = int(os.getenv("SOCIAL_SCANNER_TIMEOUT", "20"))
 DEFAULT_OUTPUT = "social_scan.csv"
 DEFAULT_HISTORY = "social_scan_history.csv"
+NEWSAPI_KEY = os.getenv("NEWSAPI_KEY", "")
 
 BULLISH_TERMS = {
     "breakout", "squeeze", "rip", "runner", "bullish", "buy", "long", "calls",
@@ -87,14 +88,20 @@ class BaseAdapter:
 
 
 
-def safe_request(url: str, params: Optional[dict] = None, debug: bool = False) -> Optional[requests.Response]:
+def safe_request(
+    url: str,
+    params: Optional[dict] = None,
+    debug: bool = False,
+    headers: Optional[dict] = None,
+) -> Optional[requests.Response]:
     try:
-        headers = {
+        request_headers = {
             "User-Agent": USER_AGENT,
             "Accept": "application/json, text/plain, */*",
-            "Referer": "https://stocktwits.com/",
         }
-        resp = requests.get(url, params=params, headers=headers, timeout=REQUEST_TIMEOUT)
+        if headers:
+            request_headers.update(headers)
+        resp = requests.get(url, params=params, headers=request_headers, timeout=REQUEST_TIMEOUT)
         if debug:
             print(f"[DEBUG] GET {resp.url} -> {resp.status_code} | {resp.headers.get('Content-Type')}")
         resp.raise_for_status()
@@ -105,61 +112,149 @@ def safe_request(url: str, params: Optional[dict] = None, debug: bool = False) -
         return None
 
 
-class StocktwitsAdapter(BaseAdapter):
-    source_name = "stocktwits"
+class RedditAdapter(BaseAdapter):
+    source_name = "reddit"
 
     def fetch_posts(self, ticker: str, debug: bool = False) -> List[SocialPost]:
-        url = f"https://api.stocktwits.com/api/2/streams/symbol/{ticker.upper()}.json"
-        resp = safe_request(url, debug=debug)
+        ticker_up = ticker.upper()
+        url = "https://www.reddit.com/search.json"
+        params = {
+            "q": f"(${ticker_up} OR {ticker_up}) (stock OR stocks OR earnings OR market)",
+            "sort": "new",
+            "limit": 50,
+            "type": "link",
+            "raw_json": 1,
+        }
+        resp = safe_request(
+            url,
+            params=params,
+            debug=debug,
+            headers={
+                "Accept": "application/json",
+                "Referer": "https://www.reddit.com/",
+            },
+        )
         if resp is None:
             return []
 
         try:
             payload = resp.json()
-            if debug:
-                print(f"[DEBUG] {ticker.upper()} payload keys: {list(payload.keys())[:10]}")
         except Exception as e:
             if debug:
-                print(f"[DEBUG] JSON parse failed for {ticker.upper()}: {e}")
+                print(f"[DEBUG] Reddit JSON parse failed for {ticker_up}: {e}")
                 print(resp.text[:500])
             return []
 
-        messages = payload.get("messages", []) or []
+        children = payload.get("data", {}).get("children", []) or []
         if debug:
-            print(f"[DEBUG] {ticker.upper()} raw message count: {len(messages)}")
+            print(f"[DEBUG] {ticker_up} reddit raw post count: {len(children)}")
 
         posts: List[SocialPost] = []
-        for msg in messages:
-            body = str(msg.get("body", "") or "")
-            if not body.strip():
+        for child in children:
+            data = child.get("data") or {}
+            title = str(data.get("title", "") or "")
+            selftext = str(data.get("selftext", "") or "")
+            body = " ".join(part for part in (title, selftext) if part).strip()
+            if not body:
                 continue
 
-            created_raw = msg.get("created_at")
-            created_at = parse_datetime(created_raw)
-            user = msg.get("user") or {}
-            likes_obj = msg.get("likes") or {}
+            body_up = body.upper()
+            if ticker_up not in body_up and f"${ticker_up}" not in body_up:
+                continue
+
+            created_utc = data.get("created_utc")
+            if isinstance(created_utc, (int, float)):
+                created_at = datetime.fromtimestamp(float(created_utc), tz=timezone.utc)
+            else:
+                created_at = parse_datetime(str(created_utc) if created_utc else None)
+
+            author = str(data.get("author", "") or "")
+            subreddit = str(data.get("subreddit", "") or "")
+            author_label = f"u/{author}" if author else ""
+            if subreddit:
+                author_label = f"{author_label} r/{subreddit}".strip()
 
             posts.append(
                 SocialPost(
                     source=self.source_name,
                     body=body,
                     created_at=created_at,
-                    likes=int(likes_obj.get("total", 0) or 0),
-                    replies=int(msg.get("conversation", {}).get("reply_count", 0) or 0),
-                    reposts=int(msg.get("reshares", {}).get("reshared_count", 0) or 0),
-                    followers=int(user.get("followers", 0) or 0),
-                    author=str(user.get("username", "") or ""),
+                    likes=int(data.get("ups", 0) or 0),
+                    replies=int(data.get("num_comments", 0) or 0),
+                    reposts=0,
+                    followers=int(data.get("subreddit_subscribers", 0) or 0),
+                    author=author_label,
                     raw_weight=1.0,
                 )
             )
         return posts
 
 
-class RedditAdapter(BaseAdapter):
-    source_name = "reddit"
+class NewsApiAdapter(BaseAdapter):
+    source_name = "newsapi"
 
     def fetch_posts(self, ticker: str, debug: bool = False) -> List[SocialPost]:
-        return []
+        if not NEWSAPI_KEY:
+            if debug:
+                print("[DEBUG] NEWSAPI_KEY not set; skipping NewsAPI adapter")
+            return []
+
+        ticker_up = ticker.upper()
+        url = "https://newsapi.org/v2/everything"
+        params = {
+            "q": f'"{ticker_up}" AND (stock OR earnings OR market)',
+            "sortBy": "publishedAt",
+            "language": "en",
+            "pageSize": 30,
+            "apiKey": NEWSAPI_KEY,
+        }
+        resp = safe_request(url, params=params, debug=debug, headers={"Accept": "application/json"})
+        if resp is None:
+            return []
+
+        try:
+            payload = resp.json()
+        except Exception as e:
+            if debug:
+                print(f"[DEBUG] NewsAPI JSON parse failed for {ticker_up}: {e}")
+                print(resp.text[:500])
+            return []
+
+        articles = payload.get("articles", []) or []
+        if debug:
+            print(f"[DEBUG] {ticker_up} newsapi raw article count: {len(articles)}")
+
+        posts: List[SocialPost] = []
+        for article in articles:
+            title = str(article.get("title", "") or "")
+            desc = str(article.get("description", "") or "")
+            body = " ".join(part for part in (title, desc) if part).strip()
+            if not body:
+                continue
+
+            body_up = body.upper()
+            if ticker_up not in body_up and f"${ticker_up}" not in body_up:
+                continue
+
+            created_at = parse_datetime(str(article.get("publishedAt", "") or ""))
+            source_name = str((article.get("source") or {}).get("name", "") or "")
+            author = str(article.get("author", "") or "")
+            author_label = f"{author} ({source_name})".strip() if source_name else author
+
+            posts.append(
+                SocialPost(
+                    source=self.source_name,
+                    body=body,
+                    created_at=created_at,
+                    likes=0,
+                    replies=0,
+                    reposts=0,
+                    followers=0,
+                    author=author_label,
+                    raw_weight=1.0,
+                )
+            )
+        return posts
 
 
 class XAdapter(BaseAdapter):
@@ -487,7 +582,7 @@ def main() -> None:
         print("No tickers supplied. Use --tickers or --input-csv.")
         sys.exit(1)
 
-    adapters: List[BaseAdapter] = [StocktwitsAdapter(), RedditAdapter(), XAdapter()]
+    adapters: List[BaseAdapter] = [RedditAdapter(), NewsApiAdapter(), XAdapter()]
 
     print(f"Scanning {len(tickers)} ticker(s) for social telemetry...")
     results: List[SocialScanResult] = []

@@ -1,0 +1,2 @@
+scan_time_utc,ticker,mention_count,current_window_mentions,baseline_window_mentions,mention_velocity,sentiment_score,engagement_score,source_diversity_score,influencer_score,spam_penalty,narrative_score,social_pressure_score,confidence_label,narrative_tags,top_sources,reason
+2026-03-17T04:01:41Z,AAPL,38,38,23,1.65,5.2,6.35,5.0,10.0,2.37,10.0,5.04,Narrative Forming,"ai, earnings, squeeze, offering, fda","reddit, newsapi","mentions rising, real engagement, multi-source chatter, narrative tags: ai, earnings, squeeze"

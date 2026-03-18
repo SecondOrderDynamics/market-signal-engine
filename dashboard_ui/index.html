@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily Scan Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="layout">
+    <header class="hero">
+      <div>
+        <h1>Daily Pipeline Dashboard</h1>
+        <p id="subhead">Loading latest run status...</p>
+      </div>
+      <div class="hero-actions">
+        <span id="statusChip" class="chip chip-neutral">Unknown</span>
+        <button id="refreshBtn" class="btn">Refresh</button>
+      </div>
+    </header>
+
+    <section class="cards" id="countCards">
+      <article class="card">
+        <h2>Explosive Found</h2>
+        <p id="explosiveFound">-</p>
+      </article>
+      <article class="card">
+        <h2>Merged Total</h2>
+        <p id="mergedTotal">-</p>
+      </article>
+      <article class="card">
+        <h2>Eligible Eval Rows</h2>
+        <p id="eligibleRows">-</p>
+      </article>
+      <article class="card">
+        <h2>Skipped Eval Rows</h2>
+        <p id="skippedRows">-</p>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Top Candidates</h2>
+      </div>
+      <div class="table-wrap">
+        <table id="topCandidatesTable">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Total</th>
+              <th>Event</th>
+              <th>Anomaly</th>
+              <th>Label</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid-two">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Recent Runs</h2>
+        </div>
+        <div class="table-wrap">
+          <table id="recentRunsTable">
+            <thead>
+              <tr>
+                <th>Run ID</th>
+                <th>Status</th>
+                <th>Timestamp (UTC)</th>
+                <th>Found</th>
+                <th>Eligible</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Evaluation Snapshot</h2>
+        </div>
+        <dl class="stats-list" id="evalStats"></dl>
+      </section>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Merged Watchlist Preview</h2>
+      </div>
+      <div class="table-wrap">
+        <table id="mergedTable">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Total</th>
+              <th>Event</th>
+              <th>Anomaly</th>
+              <th>Anomaly Label</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

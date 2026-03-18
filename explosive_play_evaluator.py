@@ -11,6 +11,19 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
+# Force yfinance timezone cache into a local writable folder.
+# This avoids sqlite cache writes in restricted profile locations.
+LOCAL_TZ_CACHE = Path("price_cache")
+LOCAL_TZ_CACHE.mkdir(parents=True, exist_ok=True)
+try:
+    # Applies to cookie/ISIN sqlite-backed caches in newer yfinance builds.
+    if hasattr(yf, "cache") and hasattr(yf.cache, "set_cache_location"):
+        yf.cache.set_cache_location(str(LOCAL_TZ_CACHE))
+    # Explicit timezone cache path for compatibility with older/newer builds.
+    yf.set_tz_cache_location(str(LOCAL_TZ_CACHE))
+except Exception:
+    pass
+
 
 # Defaults mirror existing scanner outputs
 DEFAULT_EXPLOSIVE_HISTORY = "explosive_play_historical_scans.csv"
@@ -30,6 +43,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-n", default="5,10,20", help="Comma list for hit-rate and return summaries")
     parser.add_argument("--output", default=DEFAULT_OUTPUT, help="Evaluation CSV output path")
     parser.add_argument("--max-forward-days", type=int, default=5, help="Max forward window (trading days) to fetch")
+    parser.add_argument("--auto-evaluate", action="store_true", help="Evaluate all historical rows where 5 trading days of forward data are available")
     return parser.parse_args()
 
 
@@ -87,12 +101,28 @@ def select_event_row(event_df: pd.DataFrame, ticker: str, scan_date: pd.Timestam
 
 def download_price_cache(tickers: Sequence[str], start: pd.Timestamp, end: pd.Timestamp) -> Dict[str, pd.DataFrame]:
     cache: Dict[str, pd.DataFrame] = {}
+    start_str = (start - pd.Timedelta(days=2)).strftime("%Y-%m-%d")
+    end_str = (end + pd.Timedelta(days=8)).strftime("%Y-%m-%d")
+
+    def log_empty_reason(symbol: str) -> None:
+        try:
+            # raise_errors=True surfaces the underlying failure cause when available.
+            yf.Ticker(symbol).history(
+                start=start_str,
+                end=end_str,
+                interval="1d",
+                raise_errors=True,
+            )
+            print(f"[WARN] {symbol}: empty price response from yfinance")
+        except Exception as err:
+            print(f"[WARN] {symbol}: yfinance download failed: {type(err).__name__}: {err}")
+
     for ticker in sorted(set(tickers)):
         try:
             df = yf.download(
                 ticker,
-                start=(start - pd.Timedelta(days=2)).strftime("%Y-%m-%d"),
-                end=(end + pd.Timedelta(days=8)).strftime("%Y-%m-%d"),
+                start=start_str,
+                end=end_str,
                 interval="1d",
                 progress=False,
                 auto_adjust=False,
@@ -105,7 +135,10 @@ def download_price_cache(tickers: Sequence[str], start: pd.Timestamp, end: pd.Ti
             if not df.empty:
                 df["date"] = pd.to_datetime(df.index).normalize()
                 cache[ticker] = df
-        except Exception:
+            else:
+                log_empty_reason(ticker)
+        except Exception as e:
+            print(f"[WARN] {ticker}: yfinance download failed: {type(e).__name__}: {e}")
             continue
     return cache
 
@@ -153,6 +186,14 @@ def forward_returns(prices: pd.DataFrame, scan_date: pd.Timestamp, horizons: Seq
     return out
 
 
+def has_forward_window(prices: pd.DataFrame, scan_date: pd.Timestamp, horizon_days: int = 5) -> bool:
+    if prices.empty:
+        return False
+    after = prices[prices["date"] >= scan_date]
+    # Need scan-day close + N trading closes to compute close-to-close N-day return.
+    return len(after.index) > horizon_days
+
+
 def spearman_corr(score: pd.Series, target: pd.Series) -> float:
     s = score.dropna()
     t = target.dropna()
@@ -180,6 +221,11 @@ def main() -> None:
     args = parse_args()
     start = parse_date(args.start_date)
     end = parse_date(args.end_date)
+    if args.auto_evaluate and (args.start_date or args.end_date):
+        print("[INFO] --auto-evaluate uses full history; ignoring --start-date/--end-date filters.")
+        start = None
+        end = None
+
     top_ns = [int(x) for x in args.top_n.split(",") if x.strip().isdigit()]
     horizons = [1, 3, 5]
 
@@ -193,6 +239,7 @@ def main() -> None:
     explosive_df = load_explosive_history(args.explosive_history, start, end)
     if explosive_df.empty:
         raise SystemExit("No explosive history rows in the requested window.")
+    total_historical_rows = len(explosive_df.index)
 
     event_df = load_event_history(args.event_history)
 
@@ -200,6 +247,7 @@ def main() -> None:
     price_cache = download_price_cache(tickers, explosive_df["scan_date"].min(), explosive_df["scan_date"].max() + pd.Timedelta(days=args.max_forward_days))
 
     records: List[dict] = []
+    skipped_insufficient_forward = 0
     for _, row in explosive_df.iterrows():
         ticker = row["ticker"]
         scan_date = row["scan_date"]
@@ -221,7 +269,14 @@ def main() -> None:
             composite = math.nan
 
         prices = price_cache.get(ticker, pd.DataFrame())
+        if args.auto_evaluate and not has_forward_window(prices, scan_date, horizon_days=5):
+            skipped_insufficient_forward += 1
+            continue
+
         returns = forward_returns(prices, scan_date, horizons)
+        if args.auto_evaluate and pd.isna(returns.get("fwd5d_close")):
+            skipped_insufficient_forward += 1
+            continue
 
         rec = {
             "scan_date": scan_date,
@@ -235,17 +290,42 @@ def main() -> None:
         rec.update(returns)
         records.append(rec)
 
+    eval_columns = [
+        "scan_date",
+        "ticker",
+        "total_score",
+        "composite_score",
+        "event_intel_score",
+        "sec_insider_score",
+        "anomaly_score",
+        "fwd1d_close",
+        "fwd1d_max",
+        "fwd3d_close",
+        "fwd3d_max",
+        "fwd5d_close",
+        "fwd5d_max",
+        "hit_5pct_5d",
+        "hit_10pct_5d",
+        "hit_15pct_5d",
+    ]
     eval_df = pd.DataFrame(records)
-    eval_df["base_rank"] = eval_df["total_score"].rank(method="dense", ascending=False)
-    eval_df["merged_rank"] = eval_df["composite_score"].rank(method="dense", ascending=False)
-
-    corr_base = spearman_corr(eval_df["total_score"], eval_df["fwd5d_close"])
-    corr_merge = spearman_corr(eval_df["composite_score"], eval_df["fwd5d_close"]) if comp_weights else float("nan")
+    if eval_df.empty:
+        eval_df = pd.DataFrame(columns=eval_columns + ["base_rank", "merged_rank"])
+        corr_base = float("nan")
+        corr_merge = float("nan")
+    else:
+        eval_df["base_rank"] = eval_df["total_score"].rank(method="dense", ascending=False)
+        eval_df["merged_rank"] = eval_df["composite_score"].rank(method="dense", ascending=False)
+        corr_base = spearman_corr(eval_df["total_score"], eval_df["fwd5d_close"])
+        corr_merge = spearman_corr(eval_df["composite_score"], eval_df["fwd5d_close"]) if comp_weights else float("nan")
 
     eval_df.to_csv(args.output, index=False)
 
     print("\nEvaluation summary")
     print(f"Rows: {len(eval_df)} | Date window: {start.date() if start else 'min'} to {end.date() if end else 'max'}")
+    print(f"Total historical scans: {total_historical_rows}")
+    print(f"Rows eligible for evaluation: {len(eval_df)}")
+    print(f"Rows skipped due to insufficient forward data: {skipped_insufficient_forward}")
     print(f"Composite weights: {comp_weights if comp_weights else 'not provided; merged ranking not evaluated'}")
     print(f"Spearman corr (base total_score vs 5d close): {corr_base:.3f}" if not math.isnan(corr_base) else "Spearman corr base: n/a")
     if comp_weights:
