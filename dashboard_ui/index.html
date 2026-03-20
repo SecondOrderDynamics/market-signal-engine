@@ -11,6 +11,7 @@
 </head>
 <body>
   <main class="layout">
+
     <header class="hero">
       <div>
         <h1>Daily Pipeline Dashboard</h1>
@@ -22,10 +23,15 @@
       </div>
     </header>
 
+    <!-- Summary cards -->
     <section class="cards" id="countCards">
       <article class="card">
-        <h2>Explosive Found</h2>
-        <p id="explosiveFound">-</p>
+        <h2>Small Cap+ Found</h2>
+        <p id="smallFound">-</p>
+      </article>
+      <article class="card">
+        <h2>Nano Cap Found</h2>
+        <p id="nanoFound">-</p>
       </article>
       <article class="card">
         <h2>Merged Total</h2>
@@ -41,19 +47,28 @@
       </article>
     </section>
 
+    <!-- Small cap watchlist -->
     <section class="panel">
       <div class="panel-head">
-        <h2>Top Candidates</h2>
+        <h2>Small Cap+ Watchlist <span class="tier-badge tier-small">Small+</span></h2>
       </div>
       <div class="table-wrap">
-        <table id="topCandidatesTable">
+        <table id="smallTable">
           <thead>
             <tr>
               <th>Ticker</th>
+              <th>Price</th>
+              <th>Rel Vol</th>
+              <th>$ Vol</th>
               <th>Total</th>
               <th>Event</th>
               <th>Anomaly</th>
-              <th>Label</th>
+              <th>Anomaly Label</th>
+              <th>SI</th>
+              <th>Breakout</th>
+              <th>Trend</th>
+              <th>Repeats</th>
+              <th>Reason</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -61,6 +76,58 @@
       </div>
     </section>
 
+    <!-- Nano cap watchlist -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Nano Cap Watchlist <span class="tier-badge tier-nano">Nano</span></h2>
+      </div>
+      <div class="table-wrap">
+        <table id="nanoTable">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Price</th>
+              <th>Rel Vol</th>
+              <th>$ Vol</th>
+              <th>Total</th>
+              <th>Event</th>
+              <th>Anomaly</th>
+              <th>Anomaly Label</th>
+              <th>SI</th>
+              <th>Breakout</th>
+              <th>Trend</th>
+              <th>Repeats</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Top candidates from latest summary (all tiers) -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Top Candidates (Latest Run)</h2>
+      </div>
+      <div class="table-wrap">
+        <table id="topCandidatesTable">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Tier</th>
+              <th>Total</th>
+              <th>Event</th>
+              <th>Anomaly</th>
+              <th>Anomaly Label</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Recent runs + eval snapshot -->
     <section class="grid-two">
       <section class="panel">
         <div class="panel-head">
@@ -90,25 +157,6 @@
       </section>
     </section>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h2>Merged Watchlist Preview</h2>
-      </div>
-      <div class="table-wrap">
-        <table id="mergedTable">
-          <thead>
-            <tr>
-              <th>Ticker</th>
-              <th>Total</th>
-              <th>Event</th>
-              <th>Anomaly</th>
-              <th>Anomaly Label</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
   </main>
 
   <script src="./app.js"></script>

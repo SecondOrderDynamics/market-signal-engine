@@ -66,9 +66,11 @@ except Exception:
 MIN_PRICE = 1.0
 MAX_PRICE = 20.0
 MIN_AVG_VOL = 300_000
+NANO_MIN_AVG_VOL = 100_000   # nano caps have less liquidity
 MIN_REL_VOL = 1.5
 MIN_DOLLAR_VOL = 1_000_000
 MAX_RESULTS = 100
+MAX_NANO_RESULTS = 50
 SLEEP_BETWEEN_REQUESTS = 0.35
 REQUEST_TIMEOUT = 15
 
@@ -107,6 +109,7 @@ class ScanResult:
     insider_score: float
     total_score: float
     reason: str
+    cap_tier: str = "small"  # "small" | "nano"
 
 
 # ----------------------------
@@ -131,30 +134,65 @@ def safe_request(
 # ----------------------------
 # Universe builder
 # ----------------------------
-def get_finviz_universe() -> pd.DataFrame:
-    """Return a starting universe from Finviz."""
+def _finviz_query(filters_dict: dict) -> pd.DataFrame:
+    """Run a single Finviz screener query; returns DataFrame with a 'Ticker' column."""
     if Overview is None:
         raise RuntimeError(
             "finvizfinance is not installed or failed to import. Run: pip install finvizfinance"
         )
-
     overview = Overview()
-    filters_dict = {
-        "Price": "Over $1",
-        "Average Volume": "Over 300K",
-        "Relative Volume": "Over 1.5",
-        "Market Cap.": "+Small (over $300mln)",
-    }
-
     overview.set_filter(filters_dict=filters_dict)
     df = overview.screener_view()
     if df is None or df.empty:
         return pd.DataFrame(columns=["Ticker"])
-
     if "Ticker" not in df.columns:
         raise RuntimeError("Unexpected Finviz response; no 'Ticker' column found.")
+    return df[["Ticker"]].drop_duplicates().reset_index(drop=True)
 
-    return df[["Ticker"]].drop_duplicates().head(MAX_RESULTS).reset_index(drop=True)
+
+def get_finviz_universe() -> pd.DataFrame:
+    """Return a starting universe from Finviz with a cap_tier column.
+
+    Runs two screener queries:
+      - small+: existing behaviour (small cap and above)
+      - nano:   under $50 M market cap with relaxed average-volume threshold
+    Returns a DataFrame with columns ['Ticker', 'cap_tier'].
+    """
+    frames = []
+
+    try:
+        df_small = _finviz_query({
+            "Price": "Over $1",
+            "Average Volume": "Over 300K",
+            "Relative Volume": "Over 1.5",
+            "Market Cap.": "+Small (over $300mln)",
+        })
+        if not df_small.empty:
+            df_small = df_small.head(MAX_RESULTS).copy()
+            df_small["cap_tier"] = "small"
+            frames.append(df_small)
+    except Exception as exc:
+        print(f"[WARN] Small-cap Finviz query failed: {exc}")
+
+    try:
+        df_nano = _finviz_query({
+            "Price": "Over $1",
+            "Average Volume": "Over 100K",
+            "Relative Volume": "Over 1.5",
+            "Market Cap.": "Nano (Under $50mln)",
+        })
+        if not df_nano.empty:
+            df_nano = df_nano.head(MAX_NANO_RESULTS).copy()
+            df_nano["cap_tier"] = "nano"
+            frames.append(df_nano)
+    except Exception as exc:
+        print(f"[WARN] Nano-cap Finviz query failed: {exc}")
+
+    if not frames:
+        return pd.DataFrame(columns=["Ticker", "cap_tier"])
+
+    combined = pd.concat(frames, ignore_index=True).drop_duplicates(subset=["Ticker"])
+    return combined.reset_index(drop=True)
 
 
 # ----------------------------
@@ -672,7 +710,7 @@ def parse_composite_weights(text: Optional[str]) -> Optional[Tuple[float, float,
 # ----------------------------
 # Core scan
 # ----------------------------
-def scan_ticker(ticker: str, hist: Optional[pd.DataFrame] = None) -> Optional[ScanResult]:
+def scan_ticker(ticker: str, hist: Optional[pd.DataFrame] = None, cap_tier: str = "small") -> Optional[ScanResult]:
     if hist is None or hist.empty:
         hist = download_history(ticker, period="6mo", interval="1d")
     if hist.empty or len(hist) < 60:
@@ -691,7 +729,8 @@ def scan_ticker(ticker: str, hist: Optional[pd.DataFrame] = None) -> Optional[Sc
     market_cap = info.get("marketCap")
     float_shares = info.get("floatShares")
     avg_vol = info.get("averageVolume") or info.get("averageVolume10days") or 0
-    if avg_vol and avg_vol < MIN_AVG_VOL:
+    min_avg = NANO_MIN_AVG_VOL if cap_tier == "nano" else MIN_AVG_VOL
+    if avg_vol and avg_vol < min_avg:
         return None
 
     news_items = get_recent_news_items(ticker)
@@ -759,6 +798,7 @@ def scan_ticker(ticker: str, hist: Optional[pd.DataFrame] = None) -> Optional[Sc
         insider_score=round(iscore, 2),
         total_score=round(total, 2),
         reason=human_reason(metrics),
+        cap_tier=cap_tier,
     )
 
 
@@ -841,7 +881,11 @@ def main() -> None:
     print("Building universe from Finviz...")
     universe = get_finviz_universe()
     tickers = universe["Ticker"].dropna().astype(str).tolist()
-    print(f"Universe size: {len(tickers)}")
+    cap_tier_map: Dict[str, str] = dict(
+        zip(universe["Ticker"].astype(str), universe.get("cap_tier", pd.Series(["small"] * len(universe))))
+    )
+    nano_count = sum(1 for t in cap_tier_map.values() if t == "nano")
+    print(f"Universe size: {len(tickers)} ({len(tickers) - nano_count} small+, {nano_count} nano)")
 
     print("Downloading market data in batch...")
     hist_cache = batch_download_histories(tickers)
@@ -854,7 +898,7 @@ def main() -> None:
     for i, ticker in enumerate(tickers, start=1):
         try:
             print(f"[{i}/{len(tickers)}] Scanning {ticker}...")
-            res = scan_ticker(ticker, hist=hist_cache.get(ticker))
+            res = scan_ticker(ticker, hist=hist_cache.get(ticker), cap_tier=cap_tier_map.get(ticker, "small"))
             if res:
                 results.append(res)
         except Exception as exc:

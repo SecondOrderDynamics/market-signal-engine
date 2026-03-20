@@ -10,12 +10,16 @@
   --amber-soft: #fff3de;
   --red: #b91c1c;
   --red-soft: #ffe7e7;
+  --indigo: #4338ca;
+  --indigo-soft: #eef2ff;
+  --green: #15803d;
+  --green-soft: #dcfce7;
+  --yellow: #a16207;
+  --yellow-soft: #fef9c3;
   --shadow: 0 8px 24px rgba(11, 34, 40, 0.08);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -28,11 +32,12 @@ body {
 }
 
 .layout {
-  max-width: 1160px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 28px 16px 32px;
 }
 
+/* ── Header ─────────────────────────────────────────────── */
 .hero {
   display: flex;
   justify-content: space-between;
@@ -57,6 +62,7 @@ body {
   gap: 10px;
 }
 
+/* ── Status chips ────────────────────────────────────────── */
 .chip {
   font-size: 0.78rem;
   border-radius: 999px;
@@ -65,21 +71,11 @@ body {
   letter-spacing: 0.02em;
 }
 
-.chip-success {
-  color: var(--teal);
-  background: var(--teal-soft);
-}
+.chip-success { color: var(--teal);  background: var(--teal-soft); }
+.chip-failed  { color: var(--red);   background: var(--red-soft);  }
+.chip-neutral { color: var(--amber); background: var(--amber-soft);}
 
-.chip-failed {
-  color: var(--red);
-  background: var(--red-soft);
-}
-
-.chip-neutral {
-  color: var(--amber);
-  background: var(--amber-soft);
-}
-
+/* ── Button ──────────────────────────────────────────────── */
 .btn {
   border: 1px solid var(--line);
   background: #fff;
@@ -90,14 +86,13 @@ body {
   cursor: pointer;
 }
 
-.btn:hover {
-  border-color: #b5c7c5;
-}
+.btn:hover { border-color: #b5c7c5; }
 
+/* ── Summary cards ───────────────────────────────────────── */
 .cards {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin-bottom: 14px;
 }
 
@@ -109,9 +104,7 @@ body {
   box-shadow: var(--shadow);
 }
 
-.card {
-  padding: 14px 16px;
-}
+.card { padding: 14px 16px; }
 
 .card h2 {
   margin: 0;
@@ -126,19 +119,25 @@ body {
   font-weight: 700;
 }
 
-.panel {
-  margin-bottom: 14px;
-}
+/* ── Panels ──────────────────────────────────────────────── */
+.panel { margin-bottom: 14px; }
 
 .panel-head {
   padding: 14px 16px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .panel h2 {
   margin: 0;
   font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+/* ── Tables ──────────────────────────────────────────────── */
 .table-wrap {
   overflow-x: auto;
   padding: 0 8px 10px;
@@ -147,32 +146,73 @@ body {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
-th,
-td {
+th, td {
   border-bottom: 1px solid var(--line);
-  padding: 9px 10px;
+  padding: 8px 10px;
   text-align: left;
   white-space: nowrap;
+}
+
+td.reason-cell {
+  white-space: normal;
+  max-width: 260px;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 th {
   color: var(--muted);
   font-weight: 600;
+  font-size: 0.8rem;
 }
 
-tbody tr:hover {
-  background: #f5fafa;
+tbody tr:hover { background: #f5fafa; }
+
+/* ── Score colouring ─────────────────────────────────────── */
+.score-high { color: var(--green);  font-weight: 600; }
+.score-mid  { color: var(--yellow); font-weight: 600; }
+.score-low  { color: var(--muted);  }
+
+/* ── Cap tier badges ─────────────────────────────────────── */
+.tier-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 3px 8px;
+  letter-spacing: 0.03em;
 }
 
+.tier-small { background: var(--teal-soft);   color: var(--teal);   }
+.tier-nano  { background: var(--indigo-soft);  color: var(--indigo); }
+
+/* ── Anomaly label badges ────────────────────────────────── */
+.anomaly-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.anomaly-extreme { background: var(--red-soft);    color: var(--red);    }
+.anomaly-high    { background: var(--amber-soft);  color: var(--amber);  }
+.anomaly-mid     { background: var(--yellow-soft); color: var(--yellow); }
+.anomaly-low     { background: var(--teal-soft);   color: var(--teal);   }
+
+/* ── Run status indicators ───────────────────────────────── */
+.status-ok   { color: var(--green); font-weight: 600; }
+.status-fail { color: var(--red);   font-weight: 600; }
+
+/* ── Two-column grid (runs + eval) ──────────────────────── */
 .grid-two {
   display: grid;
   gap: 14px;
   grid-template-columns: 1.6fr 1fr;
 }
 
+/* ── Stats list (eval snapshot) ─────────────────────────── */
 .stats-list {
   margin: 0;
   padding: 4px 16px 14px;
@@ -190,27 +230,18 @@ tbody tr:hover {
   font-size: 0.94rem;
 }
 
-@media (max-width: 980px) {
-  .cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 
-  .grid-two {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 980px) {
+  .cards    { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-two { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
-  .hero {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .cards {
-    grid-template-columns: 1fr;
-  }
-
-  .layout {
-    padding: 18px 12px 24px;
-  }
+  .hero { flex-direction: column; align-items: flex-start; }
+  .cards { grid-template-columns: 1fr; }
+  .layout { padding: 18px 12px 24px; }
 }

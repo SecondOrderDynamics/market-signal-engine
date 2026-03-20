@@ -66,7 +66,16 @@ class DashboardDataService:
         p = Path(raw)
         return p if p.is_absolute() else self.workspace / p
 
-    def merged_watchlist_preview(self, limit: int = 25) -> list[dict[str, Any]]:
+    # Columns surfaced to the dashboard — order matters for display.
+    _WATCHLIST_COLS = [
+        "ticker", "cap_tier", "price", "rel_volume", "dollar_volume",
+        "total_score", "event_intel_score", "anomaly_score", "anomaly_label",
+        "sec_insider_score", "procurement_score", "congressional_score",
+        "short_interest_score", "breakout_score", "trend_score",
+        "repeat_count_30d", "reason",
+    ]
+
+    def merged_watchlist_preview(self, limit: int = 50, cap_tier: str | None = None) -> list[dict[str, Any]]:
         summary = self.latest_summary()
         merged_path = self._resolve_output_path(summary, "merged_output", "merged_watchlist.csv")
         if not merged_path.exists():
@@ -75,11 +84,17 @@ class DashboardDataService:
             df = pd.read_csv(merged_path)
         except Exception:
             return []
-        cols = [c for c in ["ticker", "total_score", "event_intel_score", "anomaly_score", "anomaly_label"] if c in df.columns]
+        if df.empty:
+            return []
+        if cap_tier and "cap_tier" in df.columns:
+            df = df[df["cap_tier"] == cap_tier]
+        sort_by = [c for c in ["total_score", "rel_volume"] if c in df.columns]
+        if sort_by:
+            df = df.sort_values(by=sort_by, ascending=False)
+        cols = [c for c in self._WATCHLIST_COLS if c in df.columns]
         if not cols:
             return []
-        preview = df.sort_values(by=[c for c in ["total_score", "rel_volume"] if c in df.columns], ascending=False).head(max(limit, 1))
-        return preview[cols].fillna("").to_dict(orient="records")
+        return df.head(max(limit, 1))[cols].fillna("").to_dict(orient="records")
 
     def evaluation_overview(self) -> dict[str, Any]:
         summary = self.latest_summary()
@@ -176,8 +191,9 @@ class DashboardRequestHandler(SimpleHTTPRequestHandler):
                 return
 
             if parsed.path == "/api/merged-watchlist":
-                limit = int(query.get("limit", ["25"])[0] or 25)
-                self._write_json({"rows": self.data_service.merged_watchlist_preview(limit=limit)})
+                limit = int(query.get("limit", ["50"])[0] or 50)
+                cap_tier = (query.get("cap_tier", [None])[0] or None)
+                self._write_json({"rows": self.data_service.merged_watchlist_preview(limit=limit, cap_tier=cap_tier)})
                 return
 
             if parsed.path == "/api/evaluation":
