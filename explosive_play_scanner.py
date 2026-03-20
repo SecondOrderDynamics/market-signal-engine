@@ -83,6 +83,8 @@ FEAR_GREED_ENDPOINTS = [
     "https://production.dataviz.cnn.io/index/fearandgreed/now",
 ]
 _FEAR_GREED_CACHE: Optional[float] = None
+_FEAR_GREED_CACHE_TS: float = 0.0
+_FEAR_GREED_CACHE_TTL: float = 3600.0  # refresh after 1 hour
 
 
 @dataclass
@@ -185,6 +187,40 @@ def download_history(ticker: str, period: str = "6mo", interval: str = "1d") -> 
         return pd.DataFrame()
 
 
+def batch_download_histories(tickers: List[str], period: str = "6mo") -> Dict[str, pd.DataFrame]:
+    """Download OHLCV for all tickers in a single yfinance call.
+
+    Falls back to an empty dict on failure; individual tickers will then
+    be fetched on-demand by scan_ticker via download_history().
+    """
+    if not tickers:
+        return {}
+    try:
+        raw = yf.download(
+            tickers,
+            period=period,
+            interval="1d",
+            auto_adjust=False,
+            progress=False,
+            threads=True,
+            prepost=True,
+            group_by="ticker",
+        )
+        result: Dict[str, pd.DataFrame] = {}
+        for ticker in tickers:
+            try:
+                # Single-ticker downloads don't gain a ticker-level MultiIndex layer.
+                df = raw[ticker].copy() if len(tickers) > 1 else raw.copy()
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = [c[0] for c in df.columns]
+                result[ticker] = df.dropna()
+            except Exception:
+                result[ticker] = pd.DataFrame()
+        return result
+    except Exception:
+        return {}
+
+
 # ----------------------------
 # News / catalyst scoring
 # ----------------------------
@@ -220,6 +256,11 @@ def get_recent_news_items(ticker: str) -> List[dict]:
 
 
 
+_HIGH_CATALYST_KW = frozenset(["fda", "approval", "phase 3", "acquisition", "merger", "buyout"])
+_MED_CATALYST_KW = frozenset(["phase 1", "phase 2", "trial", "contract", "partnership", "buyback", "grant", "guidance", "spinoff", "restructuring"])
+_LOW_CATALYST_KW = frozenset(["earnings", "ai", "upgrade", "outlook"])
+
+
 def news_score_from_items(news_items: List[dict]) -> float:
     count = len(news_items)
     score = 0.0
@@ -230,36 +271,22 @@ def news_score_from_items(news_items: List[dict]) -> float:
     elif count >= 2:
         score += 0.5
 
-    catalyst_keywords = [
-        "fda",
-        "phase 1",
-        "phase 2",
-        "phase 3",
-        "trial",
-        "approval",
-        "contract",
-        "partnership",
-        "acquisition",
-        "merger",
-        "buyback",
-        "ai",
-        "guidance",
-        "earnings",
-        "grant",
-    ]
-
-    hits = 0
+    # Weighted catalyst scoring: high-impact events count 3x more than low-signal terms.
+    # Each article contributes at most its highest matching tier.
+    catalyst_score = 0.0
     for item in news_items[:20]:
         blob = " ".join(
             str(item.get(k, "")) for k in ["title", "description", "summary"]
         ).lower()
-        if any(keyword in blob for keyword in catalyst_keywords):
-            hits += 1
+        if any(kw in blob for kw in _HIGH_CATALYST_KW):
+            catalyst_score += 1.0
+        elif any(kw in blob for kw in _MED_CATALYST_KW):
+            catalyst_score += 0.5
+        elif any(kw in blob for kw in _LOW_CATALYST_KW):
+            catalyst_score += 0.2
 
-    if hits >= 5:
-        score += 1.0
-    elif hits >= 2:
-        score += 0.5
+    # Map to the same 0-1 bonus range as before (previously 0.5 or 1.0 based on raw hit count).
+    score += min(1.0, catalyst_score / 4.0)
 
     return min(score, 3.0)
 
@@ -419,8 +446,8 @@ def _extract_fear_greed_value(payload: object) -> Optional[float]:
 
 
 def get_fear_greed_index() -> Optional[float]:
-    global _FEAR_GREED_CACHE
-    if _FEAR_GREED_CACHE is not None:
+    global _FEAR_GREED_CACHE, _FEAR_GREED_CACHE_TS
+    if _FEAR_GREED_CACHE is not None and time.monotonic() - _FEAR_GREED_CACHE_TS < _FEAR_GREED_CACHE_TTL:
         return _FEAR_GREED_CACHE
 
     for endpoint in FEAR_GREED_ENDPOINTS:
@@ -435,6 +462,7 @@ def get_fear_greed_index() -> Optional[float]:
         value = _extract_fear_greed_value(payload)
         if value is not None:
             _FEAR_GREED_CACHE = value
+            _FEAR_GREED_CACHE_TS = time.monotonic()
             return value
 
     return None
@@ -485,6 +513,7 @@ def reddit_buzz_score(ticker: str) -> float:
         return 0.0
 
     ticker_pattern = re.compile(rf"(?<![A-Z0-9])\$?{re.escape(ticker_up)}(?![A-Z0-9])", re.IGNORECASE)
+    now_ts = time.time()
     mentions = 0
     total_engagement = 0.0
     for child in children:
@@ -497,7 +526,11 @@ def reddit_buzz_score(ticker: str) -> float:
         mentions += 1
         ups = float(data.get("ups", 0) or 0)
         comments = float(data.get("num_comments", 0) or 0)
-        total_engagement += ups + 1.5 * comments
+        # Decay engagement over 2 weeks: a post from 14 days ago counts ~10% as much as a fresh one.
+        created = float(data.get("created_utc", now_ts) or now_ts)
+        age_hours = max(0.0, (now_ts - created) / 3600.0)
+        recency_weight = max(0.1, 1.0 - age_hours / 336.0)
+        total_engagement += (ups + 1.5 * comments) * recency_weight
 
     if mentions == 0:
         return 0.0
@@ -569,18 +602,35 @@ def social_score(ticker: str, news_items: Optional[List[dict]] = None) -> float:
 
 
 def insider_activity_score(ticker: str) -> float:
-    """Best-effort OpenInsider scrape for recent purchase language."""
+    """Best-effort OpenInsider scrape for recent purchase activity.
+
+    Counts explicit buy (P) and sell (S) transaction codes in table cells rather
+    than checking for the presence of the word 'sale' in page text — which almost
+    always appears in site navigation/headers regardless of actual transactions.
+    """
     url = f"https://www.openinsider.com/screener?s={ticker}"
     resp = safe_request(url)
     if resp is None:
         return 0.0
 
-    text = resp.text.lower()
-    if "purchase" in text and "sale" not in text:
-        return 2.0
-    if "purchase" in text:
-        return 1.0
-    return 0.0
+    text = resp.text
+    # OpenInsider renders each transaction code in its own <td> cell.
+    buy_count = len(re.findall(r"<td[^>]*>\s*P\s*</td>", text, re.IGNORECASE))
+    sell_count = len(re.findall(r"<td[^>]*>\s*S\s*</td>", text, re.IGNORECASE))
+
+    if buy_count == 0 and sell_count == 0:
+        # Fallback: look for the verbose label used in some page variants.
+        tl = text.lower()
+        buy_count = tl.count("p - purchase")
+        sell_count = tl.count("s - sale")
+
+    if buy_count == 0:
+        return 0.0
+    if buy_count > sell_count:
+        # More buys than sells: score rises with the net imbalance, capped at 2.0.
+        return min(2.0, 1.0 + (buy_count - sell_count) * 0.25)
+    # Buys present but matched or outnumbered by sells.
+    return 0.5
 
 
 
@@ -622,8 +672,9 @@ def parse_composite_weights(text: Optional[str]) -> Optional[Tuple[float, float,
 # ----------------------------
 # Core scan
 # ----------------------------
-def scan_ticker(ticker: str) -> Optional[ScanResult]:
-    hist = download_history(ticker, period="6mo", interval="1d")
+def scan_ticker(ticker: str, hist: Optional[pd.DataFrame] = None) -> Optional[ScanResult]:
+    if hist is None or hist.empty:
+        hist = download_history(ticker, period="6mo", interval="1d")
     if hist.empty or len(hist) < 60:
         return None
 
@@ -792,11 +843,18 @@ def main() -> None:
     tickers = universe["Ticker"].dropna().astype(str).tolist()
     print(f"Universe size: {len(tickers)}")
 
+    print("Downloading market data in batch...")
+    hist_cache = batch_download_histories(tickers)
+    if hist_cache:
+        print(f"Batch download complete ({len(hist_cache)} tickers).")
+    else:
+        print("Batch download failed or returned empty; will fetch per-ticker.")
+
     results: List[ScanResult] = []
     for i, ticker in enumerate(tickers, start=1):
         try:
             print(f"[{i}/{len(tickers)}] Scanning {ticker}...")
-            res = scan_ticker(ticker)
+            res = scan_ticker(ticker, hist=hist_cache.get(ticker))
             if res:
                 results.append(res)
         except Exception as exc:

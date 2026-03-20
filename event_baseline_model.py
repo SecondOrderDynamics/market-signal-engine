@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -137,7 +138,9 @@ class EventBaselineModel:
         novel_tags = sorted(current_tags - seen_tags)
         novel_sources = sorted(current_sources - seen_sources)
 
-        sample_reliability = min(1.0, sample_size / 6.0)
+        # Exponential saturation: ~0.18 at n=1, ~0.45 at n=3, ~0.70 at n=6, ~0.86 at n=10.
+        # Much more conservative than linear (min(1, n/6)) which hits 1.0 at just 6 samples.
+        sample_reliability = 1.0 - math.exp(-sample_size / 5.0)
         raw_score = 0.0
         flags: list[str] = []
         ranked_reasons: list[tuple[float, str]] = []
@@ -149,7 +152,9 @@ class EventBaselineModel:
                 flags.append(metric)
                 ranked_reasons.append((positive_z, label))
 
-        novelty_bonus = min(1.5, len(novel_tags) * 0.35 + len(novel_sources) * 0.25)
+        # Scale novelty bonus by sample_reliability so a single prior scan can't
+        # inflate the score to "Anomalous" just because everything looks new.
+        novelty_bonus = min(1.5, len(novel_tags) * 0.35 + len(novel_sources) * 0.25) * sample_reliability
         anomaly_score = _clamp((raw_score * sample_reliability * 3.0) + novelty_bonus, 0.0, 10.0)
 
         if novel_tags:
