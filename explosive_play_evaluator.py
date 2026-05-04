@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#/usr/bin/env python3
 from __future__ import annotations
 
 import argparse
@@ -203,6 +203,49 @@ def spearman_corr(score: pd.Series, target: pd.Series) -> float:
     return aligned["s"].rank().corr(aligned["t"].rank(), method="pearson")
 
 
+def suggest_regime_weights(eval_df: pd.DataFrame, window_days: int = 90) -> dict:
+    """Return suggested composite weights based on rolling Spearman performance."""
+    if len(eval_df) < 30 or "composite_score" not in eval_df.columns:
+        return {"total": 0.65, "event": 0.25, "anomaly": 0.10, "regime": "insufficient_data"}
+    
+    eval_df = eval_df.copy()
+    eval_df["scan_date"] = pd.to_datetime(eval_df["scan_date"])
+    cutoff = eval_df["scan_date"].max() - pd.Timedelta(days=window_days)
+    recent = eval_df[eval_df["scan_date"] >= cutoff].copy()
+    
+    if recent.empty:
+        return {"total": 0.65, "event": 0.25, "anomaly": 0.10, "regime": "insufficient_data"}
+    
+    # Simple regime proxy
+    avg_hit10 = recent["hit_10pct_5d"].mean(skipna=True)
+    regime = "high_vol" if avg_hit10 < 0.25 else "normal"
+    
+    # Grid search best weights
+    best_corr = -1.0
+    best_w = (0.65, 0.25, 0.10)
+    for t in [0.5, 0.6, 0.65, 0.7, 0.75]:
+        for e in [0.15, 0.2, 0.25, 0.3, 0.35]:
+            for a in [0.05, 0.1, 0.15]:
+                if abs(t + e + a - 1.0) > 0.01:
+                    continue
+                recent["test_comp"] = (recent["total_score"] * t +
+                                       recent.get("event_intel_score", pd.Series(0)).fillna(0) * e +
+                                       recent.get("anomaly_score", pd.Series(0)).fillna(0) * a)
+                corr = spearman_corr(recent["test_comp"], recent["fwd5d_close"])
+                if not math.isnan(corr) and corr > best_corr:
+                    best_corr = corr
+                    best_w = (t, e, a)
+    
+    return {
+        "total": round(best_w[0], 2),
+        "event": round(best_w[1], 2),
+        "anomaly": round(best_w[2], 2),
+        "regime": regime,
+        "spearman_corr": round(best_corr, 3),
+        "sample_size": len(recent)
+    }
+
+
 def summarize_top_n(df: pd.DataFrame, score_col: str, top_ns: Sequence[int]) -> List[str]:
     lines: List[str] = []
     for n in top_ns:
@@ -330,6 +373,19 @@ def main() -> None:
     print(f"Spearman corr (base total_score vs 5d close): {corr_base:.3f}" if not math.isnan(corr_base) else "Spearman corr base: n/a")
     if comp_weights:
         print(f"Spearman corr (composite vs 5d close): {corr_merge:.3f}" if not math.isnan(corr_merge) else "Spearman corr composite: n/a")
+
+    # === NEW: Regime-adaptive weight suggestion ===
+    if args.auto_evaluate and not eval_df.empty:
+        suggested = suggest_regime_weights(eval_df)
+        print("\n=== REGIME-ADAPTIVE WEIGHTS SUGGESTED ===")
+        print(f"Suggested weights: total={suggested['total']}, event={suggested['event']}, anomaly={suggested['anomaly']}")
+        print(f"Regime: {suggested['regime']} | Spearman: {suggested['spearman_corr']:.3f} | Sample: {suggested['sample_size']}")
+        # Optionally write to a file for daily_scan_runner to pick up next time
+        weights_path = Path("suggested_weights.json")
+        import json
+        with weights_path.open("w") as f:
+            json.dump(suggested, f, indent=2)
+        print(f"Wrote suggested_weights.json")
 
     if comp_weights:
         print("\nHit-rate / return snapshots:")
